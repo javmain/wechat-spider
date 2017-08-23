@@ -360,7 +360,8 @@ class Extractor(object):
                 "kind": data["kind"],
                 "url": data["url"],
                 "source": data["body"],
-                "avatar": ''
+                "avatar": '',
+                "word_id": data["word_id"]
             }
             rules = DETAIL_RULES
         else:

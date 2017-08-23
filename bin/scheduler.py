@@ -56,7 +56,8 @@ class Scheduler(object):
             for item in keywords:
                 data = {
                     'kind': KIND_KEYWORD,
-                    'word': item.text
+                    'word': item.text,
+                    'word_id': item.id
                 }
 
                 r.lpush(settings.CRAWLER_CONFIG["downloader"], json.dumps(data))
