@@ -8,3 +8,5 @@ t.py
 .python-version
 uwsgi.ini
 test.py
+*.log
+*.out
