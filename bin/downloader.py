@@ -68,7 +68,8 @@ class Downloader(object):
                             item_data = topic
                         elif topic.get('kind', None) == KIND_KEYWORD:
                             item_data = topic
-                            item_data["word_id"] = data["word_id"] 
+                            item_data["word"] = data["word"] 
+                            item_data["user_hobby_id"] = data["user_hobby_id"]
                         else:
                             item_data = topic
                             item_data["wechat_id"] = data["wechat_id"]

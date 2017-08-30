@@ -63,8 +63,9 @@ class Topic(models.Model):
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     update_time = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     available = models.CharField(db_index=True, max_length=100, default='', verbose_name='是否可用')
-    word = models.ForeignKey('Word', verbose_name='公众号')
-
+    source_topic = models.IntegerField(default=0, verbose_name='抓取源')
+    word = models.CharField(max_length=20, default='', verbose_name='抓取关键字')
+    user_hobby_id = models.IntegerField(default=0, verbose_name='兴趣关联')
 
     def __unicode__(self):
         return self.title
@@ -116,7 +117,8 @@ class Word(models.Model):
     frequency = models.IntegerField(default=100, verbose_name='爬取频率, 单位:分钟')
     next_crawl_time = models.DateTimeField(auto_now_add=True, verbose_name='下次爬取时间')
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-
+    user_hobby_id = models.IntegerField(verbose_name='关联兴趣')
+    crawl_source = models.CharField(max_length=100, verbose_name='爬取源')
     def __unicode__(self):
         return '%s %s' % (self.kind, self.text)
 

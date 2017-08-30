@@ -22,7 +22,7 @@ class ProxyAdmin(admin.ModelAdmin):
 
 
 class WordAdmin(admin.ModelAdmin):
-    list_display = ('id', 'kind', 'text', 'intro', 'frequency', 'next_crawl_time')
+    list_display = ('id', 'kind', 'text', 'intro', 'frequency', 'next_crawl_time','crawl_source')
     list_filter = ['kind']
     search_fields = ['text']
 

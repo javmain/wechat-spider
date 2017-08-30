@@ -361,7 +361,8 @@ class Extractor(object):
                 "url": data["url"],
                 "source": data["body"],
                 "avatar": '',
-                "word_id": data["word_id"]
+                "word": data["word"],
+                "user_hobby_id": data["user_hobby_id"]
             }
             rules = DETAIL_RULES
         else:

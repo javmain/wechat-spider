@@ -38,6 +38,7 @@ class DjangoModelBackend(object):
 
             # 保存文章
             params['wechat_id'] = wechat.id
+            params['source_topic'] = 0
             params['uniqueid'] = get_uniqueid('%s:%s' % (params['wechat_id'], params['title']))
             C.objects.update_or_create(uniqueid=params['uniqueid'], defaults=params)
 
