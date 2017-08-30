@@ -6,3 +6,5 @@ local_settings.py
 /static/
 t.py
 .python-version
+*.log
+*.out
