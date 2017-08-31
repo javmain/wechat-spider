@@ -52,7 +52,7 @@ class Scheduler(object):
                 logging.debug(data)
 
             # 获取要抓取的关键词
-            keywords = Word.objects.filter(frequency__gt=0, next_crawl_time__lt=now,crawl_source='wxsg').order_by('-id')
+            keywords = Word.objects.filter(frequency__gt=0, next_crawl_time__lt=now,crawl_source='wxsg',status=1).order_by('-id')
             for item in keywords:
                 data = {
                     'kind': KIND_KEYWORD,

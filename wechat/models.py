@@ -119,6 +119,7 @@ class Word(models.Model):
     create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     user_hobby_id = models.IntegerField(verbose_name='关联兴趣')
     crawl_source = models.CharField(max_length=100, verbose_name='爬取源')
+    status = models.IntegerField(default=0,verbose_name='启用状态')
     def __unicode__(self):
         return '%s %s' % (self.kind, self.text)
 
