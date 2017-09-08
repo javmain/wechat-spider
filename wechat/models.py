@@ -66,7 +66,6 @@ class Topic(models.Model):
     source_topic = models.IntegerField(default=0, verbose_name='抓取源')
     word = models.CharField(max_length=20, default='', verbose_name='抓取关键字')
     user_hobby_id = models.IntegerField(default=0, verbose_name='兴趣关联')
-
     def __unicode__(self):
         return self.title
 
