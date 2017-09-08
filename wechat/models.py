@@ -105,7 +105,7 @@ class Proxy(models.Model):
 
 
 class Word(models.Model):
-    KIND_KEYWORD = 0
+    KIND_KEYWORD = 3
     #KIND_TOPIC = 1 #
     KIND_CHOICES = (
         (KIND_KEYWORD, '关键词'),

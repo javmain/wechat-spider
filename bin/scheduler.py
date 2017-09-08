@@ -51,13 +51,32 @@ class Scheduler(object):
 
                 logging.debug(data)
 
-            # 获取要抓取的关键词
-            keywords = Word.objects.filter(frequency__gt=0, next_crawl_time__lt=now,crawl_source='wxsg',status=1).order_by('-id')
-            for item in keywords:
+            # 获取微信搜狗要抓取的关键词
+            keywords_wxsg = Word.objects.filter(frequency__gt=0, next_crawl_time__lt=now,crawl_source='wxsg',status=1).order_by('id')
+            for item in keywords_wxsg:
                 data = {
                     'kind': KIND_KEYWORD,
                     'word': item.text,
-                    'user_hobby_id': item.user_hobby_id
+                    'user_hobby_id': item.user_hobby_id,
+                    'crawl_source': item.crawl_source
+                }
+
+                r.lpush(settings.CRAWLER_CONFIG["downloader"], json.dumps(data))
+
+                # 更新index_rule
+                item.next_crawl_time = now + timedelta(minutes=item.frequency)
+                # item.next_crawl_time = now + timedelta(seconds=item.frequency)
+                item.save()
+
+                logging.debug(data)
+
+            keywords_xb = Word.objects.filter(frequency__gt=0, next_crawl_time__lt=now,crawl_source='xb',status=1).order_by('id')
+            for item in keywords_xb:
+                data = {
+                    'kind': KIND_KEYWORD,
+                    'word': item.text,
+                    'user_hobby_id': item.user_hobby_id,
+                    'crawl_source': item.crawl_source
                 }
 
                 r.lpush(settings.CRAWLER_CONFIG["downloader"], json.dumps(data))

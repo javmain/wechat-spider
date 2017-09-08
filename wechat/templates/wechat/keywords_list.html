@@ -17,6 +17,7 @@
               <th>简介</th>
               <th>爬取频率</th>
               <th>下次爬取时间</th>
+              <th>爬取源</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -28,7 +29,8 @@
               <td>{{ item.intro }}</td>
               <td>{{ item.frequency}}</td>
               <td>{% if item.frequency > 0 %}{{ item.next_crawl_time}}{% else %}N/A{% endif %}</td>
-              <td><div><a target="_blank" href="/admin/wechat/word/{{ item.id }}/">编辑</a> | <a target="_blank" href="/admin/wechat/word/{{ item.id }}/delete/">删除</a></div></td>
+              <td>{{ item.crawl_source}}</td>
+              <td><div><a target="_blank" href="/admin/wechat/word/{{ item.id }}/">编辑</a> | <a href="{% url 'keywords.now_do' item.id %}?next={{ request.get_full_path }}">立即执行</a> | <a target="_blank" href="/admin/wechat/word/{{ item.id }}/delete/">删除</a></div></td>
             </tr>
           {% endfor %}
           </tbody>

@@ -429,3 +429,21 @@ def api_add(request):
                 'ret': 0,
                 'message': '已更新'
             })
+import pdb
+from wechat.constants import KIND_KEYWORD
+from django.conf import settings
+
+@login_required
+def now_do(request,id_):
+    r = get_redis()
+    word_record = get_object_or_404(Word, pk=id_)
+    data = {
+        'kind': KIND_KEYWORD,
+        'word': word_record.text,
+        'user_hobby_id': word_record.user_hobby_id,
+        'crawl_source': word_record.crawl_source
+    }
+
+    r.lpush(settings.CRAWLER_CONFIG["downloader"], json.dumps(data))
+    next_page = request.GET.get('next')
+    return redirect(next_page)

@@ -5,7 +5,7 @@ import urllib2
 import requests
 from lxml.etree import tostring
 from itertools import chain
-
+import pdb
 ip_check_url = 'http://api.ipify.org'
 user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0'
 socket_timeout = 3

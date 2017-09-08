@@ -19,7 +19,7 @@ from wechat.downloaders import SeleniumDownloaderBackend
 from wechat.constants import KIND_HISTORY, KIND_DETAIL, KIND_KEYWORD
 import logging
 logger = logging.getLogger()
-
+import pdb
 CRAWLER_CONFIG = settings.CRAWLER_CONFIG
 CRAWLER_GLOBAL_LIMIT_SPEED = settings.CRAWLER_GLOBAL_LIMIT_SPEED
 
@@ -53,10 +53,10 @@ class Downloader(object):
 
             try:
                 data = json.loads(resp_data[1])
-
+                print '### downloader 取出抓取消息'
                 logger.debug(data)
                 is_limited, proxy = self.check_limit_speed()
-                if is_limited:
+                if False:
                     print '# 被限制, 放回去, 下次下载'
                     time.sleep(1)  # 休息一秒, 延迟放回去的时间
                     r.lpush(CRAWLER_CONFIG["downloader"], resp_data[1])
@@ -68,11 +68,15 @@ class Downloader(object):
                             item_data = topic
                         elif topic.get('kind', None) == KIND_KEYWORD:
                             item_data = topic
-                            item_data["word"] = data["word"] 
-                            item_data["user_hobby_id"] = data["user_hobby_id"]
+                            item_data["word"] = data.get("word") 
+                            item_data["user_hobby_id"] = data.get("user_hobby_id")
+                            if data.get("crawl_source") == 'xb':
+                                item_data["source_topic"] = 1
+                            else:
+                                item_data["source_topic"] = 0
                         else:
                             item_data = topic
-                            item_data["wechat_id"] = data["wechat_id"]
+                            item_data["wechat_id"] = data.get("wechat_id")
                         r.lpush(CRAWLER_CONFIG["extractor"], json.dumps(item_data))
                         logger.debug(item_data)
 
@@ -83,8 +87,14 @@ class Downloader(object):
                             #res = browser.download_wechat_history(data, process_topic)
                             pass
                         elif data.get('kind') == KIND_KEYWORD:
-                            res = browser.download_wechat_keyword(data, process_topic)
+                            if data.get("crawl_source") == 'xb':
+                                print '##抓取新榜关键字'
+                                res = browser.download_xb_wechat_keyword(data,process_topic)
+                            else:
+                                print '##抓取微信搜狗关键字'
+                                res = browser.download_wechat_keyword(data, process_topic)
                         else:
+                            print '##普通抓取'
                             res = browser.download_wechat(data, process_topic)
 
                     time.sleep(randint(1, 5))

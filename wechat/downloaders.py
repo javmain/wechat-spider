@@ -17,6 +17,11 @@ from wechat.models import Topic
 from wechat.constants import KIND_DETAIL, KIND_KEYWORD, KIND_NORMAL
 from django.conf import settings
 from .util import stringify_children
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
+import pdb
 
 import logging
 logger = logging.getLogger()
@@ -117,6 +122,17 @@ class SeleniumDownloaderBackend(object):
             self.log_antispider()
             self.retry_crawl(data)
 
+    def download_xb_wechat_keyword(self,data,process_topic):
+        """ 爬取新榜关键词 新榜列表爬取最新文章"""
+        word = data['word']
+        try:
+            self.visit_xb_wechat_index_keyword(word)
+            self.download_wb_wechat_keyword_topics(word,process_topic)
+        except Exception as e:
+            logger.exception(e)
+            self.log_antispider()
+            self.retry_crawl(data)
+
     def download_wechat_topic_detail(self, data, process_topic):
         """ 根据url爬取文章的详情页 """
         url = data['url']
@@ -177,6 +193,34 @@ class SeleniumDownloaderBackend(object):
         element_querybox = browser.find_element_by_name('query')
         element_querybox.send_keys(word, Keys.ARROW_DOWN)
         element_search_btn = browser.find_element_by_xpath("//input[@value='搜文章']")
+        element_search_btn.click()
+        time.sleep(3)
+        print browser.title
+
+    def visit_xb_wechat_index_keyword(self,word):
+        """ 访问新榜登陆页面,登陆用户名密码，然后访问文章页面，输入关键词，点击搜索文章"""
+        browser = self.browser
+        browser.get("http://www.newrank.cn/public/login/login.html?back=http%3A//www.newrank.cn/")
+        index_page = browser.current_window_handle
+        tab = browser.find_elements_by_class_name('login-normal-tap')[1]
+        tab.click()
+        browser.implicitly_wait(10)
+        act_btn = browser.find_element_by_id("account_input")
+        pwd_btn = browser.find_element_by_id('password_input')
+        WebDriverWait(browser, 10).until(EC.visibility_of_element_located((By.ID,'pwd_confirm')))
+        act_btn.send_keys(settings.XB_USERNAME)
+        pwd_btn.send_keys(settings.XB_PASSWORD)
+        submit_btn = browser.find_element_by_id("pwd_confirm")
+        submit_btn.click()
+        browser.implicitly_wait(10)
+        print browser.title
+        article_btn = browser.find_element_by_xpath("//div[@class='header-search-chosen clear']/span[@bind-type='article']")
+        article_btn.click()
+        browser.implicitly_wait(10)
+        browser.switch_to_window(browser.window_handles[1])
+        element_querybox = browser.find_element_by_id('product_search_box')
+        element_querybox.send_keys(word,Keys.ARROW_DOWN)
+        element_search_btn = browser.find_element_by_id("product_search_button")
         element_search_btn.click()
         time.sleep(3)
         print browser.title
@@ -304,6 +348,69 @@ class SeleniumDownloaderBackend(object):
 
                     for(var i = 0; i < imgs.length; i++) {
                       var dataSrc = imgs[i].getAttribute('data-src');
+                      if (dataSrc){
+                        imgs[i].setAttribute('src', dataSrc);
+                      }
+                    }
+                    return document.documentElement.innerHTML;
+                """
+                body = browser.execute_script(js)
+                process_topic({
+                    'url': browser.current_url,
+                    'body': body,
+                    'avatar': avatar,
+                    'title': title,
+                    'abstract': abstract,
+                    'kind': KIND_KEYWORD
+                })
+                time.sleep(randint(1, 5))
+
+    def download_wb_wechat_keyword_topics(self,word,process_topic):
+        """ 在新榜的文章列表页面，逐一点击文章并下载 """
+        browser = self.browser
+        WebDriverWait(browser, 10).until(EC.visibility_of_element_located((By.CLASS_NAME,'inside-ul-li')))
+        js = """ return document.documentElement.innerHTML; """
+        body = browser.execute_script(js)
+        htmlparser = etree.HTMLParser()
+        tree = etree.parse(StringIO(body), htmlparser)
+
+        elems = [ stringify_children(item) for item in tree.xpath("//div[@class='inside-li-top']/p")]
+        hrefs = tree.xpath("//ul[@class='inside-left-file']/li/@data-url")
+        avatars = [''] * len(elems)
+        abstracts = [''] * len(elems)
+        links = []
+        for idx, item in enumerate(elems):
+            title = item
+            print title
+            if not title:
+                continue
+            uniqueid = get_uniqueid('%s:%s' % (word, title))
+            try:
+                Topic.objects.get(uniqueid=uniqueid)
+            except Topic.DoesNotExist:
+                #print len(elems), len(hrefs), len(avatars), len(abstracts)
+                print elems, hrefs, avatars, abstracts
+                links.append((title, hrefs[idx], avatars[idx], abstracts[idx]))
+                logger.debug('文章不存在, title=%s, uniqueid=%s' % (title, uniqueid))
+        for title, link, avatar, abstract in reversed(links):
+            # 可以访问了
+            browser.get(link)
+            time.sleep(3)
+
+            if 'antispider' in browser.current_url:
+                """ 检测出爬虫"""
+                self.log_antispider()
+                time.sleep(randint(1, 5))
+            elif browser.title == '':
+                """ 该文章已经被删除"""
+                logger.debug('文章已经被删除')
+                continue
+            else:
+                js = """
+                    var imgs = document.getElementsByTagName('img');
+
+                    for(var i = 0; i < imgs.length; i++) {
+                      var dataSrc = imgs[i].getAttribute('  data-src');
                       if (dataSrc){
                         imgs[i].setAttribute('src', dataSrc);
                       }
