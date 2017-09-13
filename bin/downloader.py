@@ -54,7 +54,6 @@ class Downloader(object):
             try:
                 data = json.loads(resp_data[1])
                 print '### downloader 取出抓取消息'
-                pdb.set_trace()
                 logger.debug(data)
                 is_limited, proxy = self.check_limit_speed()
                 if False:
