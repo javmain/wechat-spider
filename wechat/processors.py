@@ -3,7 +3,7 @@ __author__ = 'yijingping'
 from wechatspider.util import get_uniqueid
 from wechat.constants import KIND_DETAIL, KIND_KEYWORD
 from wechat.models import Wechat
-
+import pdb
 class DjangoModelBackend(object):
     def __init__(self, _class):
         self._class = _class
@@ -38,7 +38,6 @@ class DjangoModelBackend(object):
 
             # 保存文章
             params['wechat_id'] = wechat.id
-            params['source_topic'] = 0
             params['user_hobby_id'] = int(params['user_hobby_id'])
             params['uniqueid'] = get_uniqueid('%s:%s' % (params['wechat_id'], params['title']))
             C.objects.update_or_create(uniqueid=params['uniqueid'], defaults=params)
