@@ -54,6 +54,7 @@ class Downloader(object):
             try:
                 data = json.loads(resp_data[1])
                 print '### downloader 取出抓取消息'
+                pdb.set_trace()
                 logger.debug(data)
                 is_limited, proxy = self.check_limit_speed()
                 if False:
@@ -68,15 +69,15 @@ class Downloader(object):
                             item_data = topic
                         elif topic.get('kind', None) == KIND_KEYWORD:
                             item_data = topic
-                            item_data["word"] = data.get("word") 
-                            item_data["user_hobby_id"] = data.get("user_hobby_id")
-                            if data.get("crawl_source") == 'xb':
+                            item_data["word"] = data["word"]
+                            item_data["user_hobby_id"] = data["user_hobby_id"]
+                            if data["crawl_source"] == 'xb':
                                 item_data["source_topic"] = 1
                             else:
                                 item_data["source_topic"] = 0
                         else:
                             item_data = topic
-                            item_data["wechat_id"] = data.get("wechat_id")
+                            item_data["wechat_id"] = data["wechat_id"]
                         r.lpush(CRAWLER_CONFIG["extractor"], json.dumps(item_data))
                         logger.debug(item_data)
 
@@ -87,7 +88,7 @@ class Downloader(object):
                             #res = browser.download_wechat_history(data, process_topic)
                             pass
                         elif data.get('kind') == KIND_KEYWORD:
-                            if data.get("crawl_source") == 'xb':
+                            if data["crawl_source"] == 'xb':
                                 print '##抓取新榜关键字'
                                 res = browser.download_xb_wechat_keyword(data,process_topic)
                             else:
