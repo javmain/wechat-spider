@@ -116,7 +116,7 @@ class SeleniumDownloaderBackend(object):
         word = data['word']
         try:
             self.visit_wechat_index_keyword(word)
-            self.download_wechat_keyword_topics(word, process_topic)
+            self.download_wechat_keyword_topics(word, process_topic,data)
         except Exception as e:
             logger.exception(e)
             self.log_antispider()
@@ -127,7 +127,7 @@ class SeleniumDownloaderBackend(object):
         word = data['word']
         try:
             self.visit_xb_wechat_index_keyword(word)
-            self.download_wb_wechat_keyword_topics(word,process_topic)
+            self.download_wb_wechat_keyword_topics(word,process_topic,data)
         except Exception as e:
             logger.exception(e)
             self.log_antispider()
@@ -362,10 +362,10 @@ class SeleniumDownloaderBackend(object):
                     'title': title,
                     'abstract': abstract,
                     'kind': KIND_KEYWORD
-                })
+                },data)
                 time.sleep(randint(1, 5))
 
-    def download_wb_wechat_keyword_topics(self,word,process_topic):
+    def download_wb_wechat_keyword_topics(self,word,process_topic,data):
         """ 在新榜的文章列表页面，逐一点击文章并下载 """
         browser = self.browser
         WebDriverWait(browser, 10).until(EC.visibility_of_element_located((By.CLASS_NAME,'inside-ul-li')))
@@ -425,7 +425,7 @@ class SeleniumDownloaderBackend(object):
                     'title': title,
                     'abstract': abstract,
                     'kind': KIND_KEYWORD
-                })
+                },data)
                 time.sleep(randint(1, 5))
 
     def log_antispider(self):
@@ -453,7 +453,9 @@ class SeleniumDownloaderBackend(object):
             data = {
                 'kind': data['kind'],
                 'word': data['word'],
-                'retry': retry + 1
+                'retry': retry + 1,
+                'user_hobby_id': data['user_hobby_id'],
+                'crawl_source': data['crawl_source']
             }
         else:
             if retry >= 3:
