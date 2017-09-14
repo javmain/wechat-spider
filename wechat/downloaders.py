@@ -20,6 +20,7 @@ from .util import stringify_children
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 import pdb
 
@@ -127,7 +128,7 @@ class SeleniumDownloaderBackend(object):
         word = data['word']
         try:
             self.visit_xb_wechat_index_keyword(word)
-            self.download_wb_wechat_keyword_topics(word,process_topic,data)
+            self.download_xb_wechat_keyword_topics(word,process_topic,data)
         except Exception as e:
             logger.exception(e)
             self.log_antispider()
@@ -303,7 +304,7 @@ class SeleniumDownloaderBackend(object):
                 })
                 time.sleep(randint(1, 5))
 
-    def download_wechat_keyword_topics(self, word, process_topic):
+    def download_wechat_keyword_topics(self, word, process_topic,data):
         """ 在关键词下的文章列表页面，逐一点击打开每一篇文章，并爬取 """
         browser = self.browser
         js = """ return document.documentElement.innerHTML; """
@@ -365,68 +366,76 @@ class SeleniumDownloaderBackend(object):
                 },data)
                 time.sleep(randint(1, 5))
 
-    def download_wb_wechat_keyword_topics(self,word,process_topic,data):
+    def download_xb_wechat_keyword_topics(self,word,process_topic,data):
         """ 在新榜的文章列表页面，逐一点击文章并下载 """
         browser = self.browser
-        WebDriverWait(browser, 10).until(EC.visibility_of_element_located((By.CLASS_NAME,'inside-ul-li')))
-        js = """ return document.documentElement.innerHTML; """
-        body = browser.execute_script(js)
-        htmlparser = etree.HTMLParser()
-        tree = etree.parse(StringIO(body), htmlparser)
+        try:
+            WebDriverWait(browser, 10).until(EC.visibility_of_element_located((By.CLASS_NAME, 'inside-ul-li')))
+            js = """ return document.documentElement.innerHTML; """
+            body = browser.execute_script(js)
+            htmlparser = etree.HTMLParser()
+            tree = etree.parse(StringIO(body), htmlparser)
 
-        elems = [ stringify_children(item) for item in tree.xpath("//div[@class='inside-li-top']/p")]
-        hrefs = tree.xpath("//ul[@class='inside-left-file']/li/@data-url")
-        avatars = [''] * len(elems)
-        abstracts = [''] * len(elems)
-        links = []
-        for idx, item in enumerate(elems):
-            title = item
-            print title
-            if not title:
-                continue
-            uniqueid = get_uniqueid('%s:%s' % (word, title))
-            try:
-                Topic.objects.get(uniqueid=uniqueid)
-            except Topic.DoesNotExist:
-                #print len(elems), len(hrefs), len(avatars), len(abstracts)
-                print elems, hrefs, avatars, abstracts
-                links.append((title, hrefs[idx], avatars[idx], abstracts[idx]))
-                logger.debug('文章不存在, title=%s, uniqueid=%s' % (title, uniqueid))
-        for title, link, avatar, abstract in reversed(links):
-            # 可以访问了
-            browser.get(link)
-            time.sleep(3)
+            elems = [stringify_children(item) for item in tree.xpath("//div[@class='inside-li-top']/p")]
+            hrefs = tree.xpath("//ul[@class='inside-left-file']/li/@data-url")
+            avatars = [''] * len(elems)
+            abstracts = [''] * len(elems)
+            links = []
+            for idx, item in enumerate(elems):
+                title = item
+                print title
+                if not title:
+                    continue
+                uniqueid = get_uniqueid('%s:%s' % (word, title))
+                try:
+                    Topic.objects.get(uniqueid=uniqueid)
+                except Topic.DoesNotExist:
+                    # print len(elems), len(hrefs), len(avatars), len(abstracts)
+                    print elems, hrefs, avatars, abstracts
+                    links.append((title, hrefs[idx], avatars[idx], abstracts[idx]))
+                    logger.debug('文章不存在, title=%s, uniqueid=%s' % (title, uniqueid))
+            for title, link, avatar, abstract in reversed(links):
+                # 可以访问了
+                browser.get(link)
+                time.sleep(3)
 
-            if 'antispider' in browser.current_url:
-                """ 检测出爬虫"""
-                self.log_antispider()
-                time.sleep(randint(1, 5))
-            elif browser.title == '':
-                """ 该文章已经被删除"""
-                logger.debug('文章已经被删除')
-                continue
-            else:
-                js = """
-                    var imgs = document.getElementsByTagName('img');
+                if 'antispider' in browser.current_url:
+                    """ 检测出爬虫"""
+                    self.log_antispider()
+                    time.sleep(randint(1, 5))
+                elif browser.title == '':
+                    """ 该文章已经被删除"""
+                    logger.debug('文章已经被删除')
+                    continue
+                else:
+                    js = """
+                                var imgs = document.getElementsByTagName('img');
 
-                    for(var i = 0; i < imgs.length; i++) {
-                      var dataSrc = imgs[i].getAttribute('  data-src');
-                      if (dataSrc){
-                        imgs[i].setAttribute('src', dataSrc);
-                      }
-                    }
-                    return document.documentElement.innerHTML;
-                """
-                body = browser.execute_script(js)
-                process_topic({
-                    'url': browser.current_url,
-                    'body': body,
-                    'avatar': avatar,
-                    'title': title,
-                    'abstract': abstract,
-                    'kind': KIND_KEYWORD
-                },data)
-                time.sleep(randint(1, 5))
+                                for(var i = 0; i < imgs.length; i++) {
+                                  var dataSrc = imgs[i].getAttribute('  data-src');
+                                  if (dataSrc){
+                                    imgs[i].setAttribute('src', dataSrc);
+                                  }
+                                }
+                                return document.documentElement.innerHTML;
+                            """
+                    body = browser.execute_script(js)
+                    process_topic({
+                        'url': browser.current_url,
+                        'body': body,
+                        'avatar': avatar,
+                        'title': title,
+                        'abstract': abstract,
+                        'kind': KIND_KEYWORD
+                    }, data)
+                    time.sleep(randint(1, 5))
+        except TimeoutException as ex:
+            print("未找到文章列表" + str(ex))
+            browser.close()
+
+
+
+
 
     def log_antispider(self):
         """ 记录1小时内的被禁爬的数量 """
